@@ -10,7 +10,7 @@ function OtpVerify() {
   const handleVerify = (e) => {
     e.preventDefault();
 
-    if (otp === "1234") {
+    if (otp === "1234") {   
       alert("Registration successful");
       localStorage.removeItem("tempUser");
       navigate("/");
