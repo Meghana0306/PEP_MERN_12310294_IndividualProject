@@ -6,7 +6,7 @@ import bgImage from "../assets/login.png";
 function Login() {
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("login"); // login | register | otp
+  const [mode, setMode] = useState("login"); // login | register | otp | loginOtp
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,11 +19,18 @@ function Login() {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/.test(pwd);
   };
 
-  // LOGIN
+  // ========================= LOGIN =========================
   const handleLogin = (e) => {
     e.preventDefault();
 
-    if (email === "admin@gmail.com" && password === "123456") {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (!storedUser) {
+      setError("User not registered. Please register first.");
+      return;
+    }
+
+    if (email === storedUser.email && password === storedUser.password) {
       localStorage.setItem("token", "dummy-token");
       navigate("/dashboard");
     } else {
@@ -31,7 +38,43 @@ function Login() {
     }
   };
 
-  // REGISTER STEP 1
+  // ====================== LOGIN WITH OTP ====================
+  const handleLoginOtpSend = () => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (!storedUser) {
+      setError("User not registered. Please register first.");
+      return;
+    }
+
+    if (email !== storedUser.email) {
+      setError("Email not found");
+      return;
+    }
+
+    const loginOtp = Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem("loginOtp", loginOtp);
+
+    alert("Your Login OTP is: " + loginOtp);
+
+    setMode("loginOtp");
+    setError("");
+  };
+
+  const handleVerifyLoginOtp = (e) => {
+    e.preventDefault();
+
+    const savedOtp = localStorage.getItem("loginOtp");
+
+    if (otp === savedOtp) {
+      localStorage.setItem("token", "dummy-token");
+      navigate("/dashboard");
+    } else {
+      setError("Invalid OTP");
+    }
+  };
+
+  // ======================= REGISTER =========================
   const handleRegister = (e) => {
     e.preventDefault();
 
@@ -52,18 +95,43 @@ function Login() {
       return;
     }
 
-    // simulate OTP send
-    console.log("OTP sent to phone/email");
+    const existingUser = JSON.parse(localStorage.getItem("user"));
+    if (existingUser && existingUser.email === email) {
+      setError("User already exists. Please login.");
+      return;
+    }
+
+    // generate OTP
+    const registerOtp = Math.floor(1000 + Math.random() * 9000);
+
+    localStorage.setItem(
+      "tempUser",
+      JSON.stringify({ email, phone, password })
+    );
+    localStorage.setItem("registerOtp", registerOtp);
+
+    alert("Registration OTP: " + registerOtp);
+
     setMode("otp");
+    setError("");
   };
 
-  // OTP VERIFY
+  // ===================== VERIFY REGISTER OTP =================
   const handleVerifyOtp = (e) => {
     e.preventDefault();
 
-    if (otp === "1234") {
-      alert("Registration successful");
+    const savedOtp = localStorage.getItem("registerOtp");
+    const tempUser = JSON.parse(localStorage.getItem("tempUser"));
+
+    if (otp === savedOtp) {
+      localStorage.setItem("user", JSON.stringify(tempUser));
+      localStorage.removeItem("tempUser");
+      localStorage.removeItem("registerOtp");
+
+      alert("Registration successful 🎉");
+
       setMode("login");
+      setError("");
     } else {
       setError("Invalid OTP");
     }
@@ -106,12 +174,46 @@ function Login() {
                 <button className="login-btn">Sign In</button>
               </form>
 
+              <p style={{ marginTop: "10px" }}>
+                or{" "}
+                <span
+                  style={{ color: "blue", cursor: "pointer" }}
+                  onClick={handleLoginOtpSend}
+                >
+                  Login with OTP
+                </span>
+              </p>
+
               <p className="register-link">
                 Don’t have an account?{" "}
                 <span onClick={() => { setMode("register"); setError(""); }}>
                   Register
                 </span>
               </p>
+            </div>
+          )}
+
+          {/* LOGIN OTP VERIFY */}
+          {mode === "loginOtp" && (
+            <div className="login-card">
+              <h2>Verify Login OTP</h2>
+
+              <form onSubmit={handleVerifyLoginOtp}>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Enter OTP"
+                    value={otp}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                  />
+                </div>
+
+                {error && <p className="error">{error}</p>}
+
+                <button className="login-btn">Verify & Login</button>
+              </form>
             </div>
           )}
 
@@ -162,7 +264,7 @@ function Login() {
             </div>
           )}
 
-          {/* OTP VERIFY */}
+          {/* REGISTER OTP VERIFY */}
           {mode === "otp" && (
             <div className="login-card">
               <h2>Verify OTP</h2>

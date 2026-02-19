@@ -10,6 +10,7 @@ function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // password validation
   const isValidPassword = (pwd) => {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/.test(pwd);
   };
@@ -32,8 +33,24 @@ function Register() {
       return;
     }
 
-    // simulate sending OTP
-    localStorage.setItem("tempUser", JSON.stringify({ email, phone, password }));
+    // check if user already exists
+    const existingUser = JSON.parse(localStorage.getItem("user"));
+    if (existingUser && existingUser.email === email) {
+      setError("User already registered. Please login.");
+      return;
+    }
+
+    // generate OTP
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    // store temp user + otp
+    localStorage.setItem(
+      "tempUser",
+      JSON.stringify({ email, phone, password })
+    );
+    localStorage.setItem("otp", otp);
+
+    alert("OTP sent to your email/phone: " + otp);
 
     navigate("/verify-otp");
   };

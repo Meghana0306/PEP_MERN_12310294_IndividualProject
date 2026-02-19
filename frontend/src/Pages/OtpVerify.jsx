@@ -10,9 +10,24 @@ function OtpVerify() {
   const handleVerify = (e) => {
     e.preventDefault();
 
-    if (otp === "1234") {   
-      alert("Registration successful");
+    const savedOtp = localStorage.getItem("registerOtp");
+    const tempUser = JSON.parse(localStorage.getItem("tempUser"));
+
+    if (!tempUser) {
+      setError("Session expired. Please register again.");
+      return;
+    }
+
+    if (otp === savedOtp) {
+      // save user permanently
+      localStorage.setItem("user", JSON.stringify(tempUser));
+
+      // cleanup temp storage
       localStorage.removeItem("tempUser");
+      localStorage.removeItem("registerOtp");
+
+      alert("Registration successful 🎉");
+
       navigate("/");
     } else {
       setError("Invalid OTP");
