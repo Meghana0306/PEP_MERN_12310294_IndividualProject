@@ -14,6 +14,8 @@ function Settings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -60,12 +62,14 @@ function Settings() {
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
+    setSaveMessage("");
+    setSaveError("");
     setSaving(true);
     try {
       await settingsAPI.updateSettings(settings);
-      alert("Settings saved successfully!");
+      setSaveMessage("Settings saved successfully.");
     } catch {
-      alert("Failed to save settings");
+      setSaveError("Failed to save settings.");
     } finally {
       setSaving(false);
     }
@@ -224,6 +228,8 @@ function Settings() {
 
         {passwordMessage && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{passwordMessage}</p>}
         {passwordError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{passwordError}</p>}
+        {saveMessage && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{saveMessage}</p>}
+        {saveError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{saveError}</p>}
 
         <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700" disabled={saving}>
           {saving ? "Saving..." : "Save Settings"}
