@@ -36,6 +36,7 @@ function Navbar() {
         <button
           className="rounded-md border border-slate-300 bg-white px-3 py-1 text-sm md:hidden"
           onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Toggle navigation menu"
         >
           Menu
         </button>
@@ -53,6 +54,7 @@ function Navbar() {
           <button
             onClick={handleLogout}
             className="rounded-md bg-gradient-to-r from-teal-700 to-sky-600 px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+            aria-label="Logout"
           >
             Logout
           </button>
@@ -74,6 +76,7 @@ function Navbar() {
           <button
             onClick={handleLogout}
             className="w-full rounded-md bg-gradient-to-r from-teal-700 to-sky-600 px-3 py-2 text-sm font-medium text-white"
+            aria-label="Logout"
           >
             Logout
           </button>
