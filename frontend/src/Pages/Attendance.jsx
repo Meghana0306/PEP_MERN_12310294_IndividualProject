@@ -167,6 +167,7 @@ function Attendance() {
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
               type="date"
               value={selectedDate}
+              aria-label="Select attendance date"
               onChange={(e) => {
                 setSelectedDate(e.target.value);
                 setMessage("");
@@ -251,6 +252,7 @@ function Attendance() {
                               ? "bg-emerald-600 text-white"
                               : "bg-emerald-100 text-emerald-700"
                           }`}
+                          aria-label={`Mark ${row.name} as present`}
                           onClick={() => updateStatus(row.employeeId, "Present")}
                         >
                           Present
@@ -262,6 +264,7 @@ function Attendance() {
                               ? "bg-rose-600 text-white"
                               : "bg-rose-100 text-rose-700"
                           }`}
+                          aria-label={`Mark ${row.name} as absent`}
                           onClick={() => updateStatus(row.employeeId, "Absent")}
                         >
                           Absent
