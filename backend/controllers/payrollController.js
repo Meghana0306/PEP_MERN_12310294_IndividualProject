@@ -3,6 +3,7 @@ const Employee = require("../models/Employee");
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 const isPastMonth = (month) => String(month) < currentMonth();
+const isValidMonth = (value) => /^\d{4}-\d{2}$/.test(String(value || ""));
 
 const employeeCode = (employeeId) => {
   const raw = String(employeeId || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -168,7 +169,7 @@ const ensurePayrollForMonth = async (month) => {
 
 const getPayrollRecords = async (req, res) => {
   try {
-    const month = req.query.month || currentMonth();
+    const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     const department = (req.query.department || "All").trim();
     const search = (req.query.search || "").trim().toLowerCase();
     const sortBy = req.query.sortBy || "employeeName";
@@ -227,7 +228,7 @@ const getPayrollRecords = async (req, res) => {
 
 const getPayrollSummary = async (req, res) => {
   try {
-    const month = req.query.month || currentMonth();
+    const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     await ensurePayrollForMonth(month);
     const records = await Payroll.find({ month }).lean();
 
@@ -256,7 +257,7 @@ const getPayrollSummary = async (req, res) => {
 
 const getPayrollAnalytics = async (req, res) => {
   try {
-    const month = req.query.month || currentMonth();
+    const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     await ensurePayrollForMonth(month);
     const monthRecords = await Payroll.find({ month }).lean();
 
@@ -351,7 +352,7 @@ const updatePayrollStatus = async (req, res) => {
 
 const processPayroll = async (req, res) => {
   try {
-    const month = req.body.month || currentMonth();
+    const month = isValidMonth(req.body.month) ? req.body.month : currentMonth();
     await ensurePayrollForMonth(month);
     const result = await Payroll.updateMany(
       { month },
