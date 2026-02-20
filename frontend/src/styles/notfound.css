@@ -1,0 +1,71 @@
+/* Not Found Page Styles */
+.not-found-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+}
+
+.not-found-content {
+  text-align: center;
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+}
+
+.not-found-content h1 {
+  font-size: 5rem;
+  color: #667eea;
+  margin: 0;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.not-found-content h2 {
+  font-size: 2rem;
+  color: #333;
+  margin: 1rem 0;
+}
+
+.not-found-content p {
+  color: #666;
+  font-size: 1rem;
+  margin: 1rem 0 2rem 0;
+  line-height: 1.6;
+}
+
+.not-found-content .btn-primary {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.not-found-content .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+  .not-found-content {
+    padding: 2rem;
+  }
+
+  .not-found-content h1 {
+    font-size: 3rem;
+  }
+
+  .not-found-content h2 {
+    font-size: 1.5rem;
+  }
+}

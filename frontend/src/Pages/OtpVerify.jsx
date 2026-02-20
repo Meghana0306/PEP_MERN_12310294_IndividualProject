@@ -1,68 +1,57 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import { authAPI } from "../services/api";
 
 function OtpVerify() {
   const navigate = useNavigate();
   const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleVerify = (e) => {
+  const inputClass =
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const savedOtp = localStorage.getItem("registerOtp");
-    const tempUser = JSON.parse(localStorage.getItem("tempUser"));
-
-    if (!tempUser) {
-      setError("Session expired. Please register again.");
-      return;
-    }
-
-    if (otp === savedOtp) {
-      // save user permanently
-      localStorage.setItem("user", JSON.stringify(tempUser));
-
-      // cleanup temp storage
-      localStorage.removeItem("tempUser");
-      localStorage.removeItem("registerOtp");
-
-      alert("Registration successful 🎉");
-
-      navigate("/");
-    } else {
-      setError("Invalid OTP");
+    try {
+      await authAPI.verifyOtp({ email, otp });
+      alert("Email verified successfully!");
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="main-bg">
-      <div className="login-wrapper">
-        <div className="login-left">
-          <h1 className="logo">HRMS</h1>
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="mb-1 text-2xl font-bold">Verify OTP</h1>
+        <p className="mb-5 text-sm text-slate-500">Enter email and OTP code</p>
 
-          <div className="login-card">
-            <h2>Verify OTP</h2>
-
-            <form onSubmit={handleVerify}>
-              <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) =>
-                    setOtp(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                />
-              </div>
-
-              {error && <p className="error">{error}</p>}
-
-              <button className="login-btn">Verify & Register</button>
-            </form>
-          </div>
-        </div>
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <input className={inputClass} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input
+            className={inputClass}
+            type="text"
+            placeholder="6-digit OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+            maxLength="6"
+            required
+          />
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <button className="w-full rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700" disabled={loading}>
+            {loading ? "Verifying..." : "Verify OTP"}
+          </button>
+        </form>
       </div>
-    </div>
+    </main>
   );
 }
 

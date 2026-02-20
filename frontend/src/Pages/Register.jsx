@@ -1,110 +1,116 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import bgImage from "../assets/login.png";
 
 function Register() {
   const navigate = useNavigate();
-
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const { register } = useAuth();
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // password validation
-  const isValidPassword = (pwd) => {
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/.test(pwd);
-  };
+  const inputClass =
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 
-  const handleRegister = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccessMessage("");
 
-    if (!email || !phone || !password) {
+    if (!form.name || !form.email || !form.password) {
       setError("All fields are required");
       return;
     }
 
-    if (!/^[0-9]{10}$/.test(phone)) {
-      setError("Phone must be 10 digits");
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
 
-    if (!isValidPassword(password)) {
-      setError("Password must contain uppercase, lowercase & symbol");
-      return;
+    setLoading(true);
+
+    try {
+      await register(form.name, form.email, form.password);
+      setSuccessMessage("Registered successfully. Redirecting to login...");
+      setForm({ name: "", email: "", password: "" });
+      setTimeout(() => navigate("/login", { replace: true }), 1200);
+    } catch (err) {
+      setError(err.message || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    // check if user already exists
-    const existingUser = JSON.parse(localStorage.getItem("user"));
-    if (existingUser && existingUser.email === email) {
-      setError("User already registered. Please login.");
-      return;
-    }
-
-    // generate OTP
-    const otp = Math.floor(1000 + Math.random() * 9000);
-
-    // store temp user + otp
-    localStorage.setItem(
-      "tempUser",
-      JSON.stringify({ email, phone, password })
-    );
-    localStorage.setItem("otp", otp);
-
-    alert("OTP sent to your email/phone: " + otp);
-
-    navigate("/verify-otp");
   };
 
   return (
-    <div className="main-bg">
-      <div className="login-wrapper">
-        <div className="login-left">
-          <h1 className="logo">HRMS</h1>
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md glass-card rounded-2xl p-6 md:p-8">
+          <h1 className="mb-2 text-2xl font-bold text-slate-900">Create Account</h1>
+          <p className="mb-6 text-sm text-slate-500">Register to continue</p>
 
-          <div className="login-card">
-            <h2>Create Account</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              className={inputClass}
+              name="name"
+              type="text"
+              placeholder="Full Name"
+              autoComplete="name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+            <input
+              className={inputClass}
+              name="email"
+              type="email"
+              placeholder="Email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+            <input
+              className={inputClass}
+              name="password"
+              type="password"
+              placeholder="Password"
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
 
-            <form onSubmit={handleRegister}>
-              <div className="input-group">
-                <input
-                  type="email"
-                  placeholder="Enter Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+            {successMessage && (
+              <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{successMessage}</p>
+            )}
+            {error && <p className="text-sm text-rose-600">{error}</p>}
 
-              <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="Enter Phone Number"
-                  value={phone}
-                  onChange={(e) =>
-                    setPhone(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                />
-              </div>
+            <button
+              className="w-full rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+              disabled={loading}
+            >
+              {loading ? "Creating account..." : "Register"}
+            </button>
+          </form>
 
-              <div className="input-group">
-                <input
-                  type="password"
-                  placeholder="Create Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              {error && <p className="error">{error}</p>}
-
-              <button className="login-btn">Send OTP</button>
-            </form>
-
-            <p className="register-link">
-              Already have an account?{" "}
-              <span onClick={() => navigate("/")}>Login</span>
-            </p>
-          </div>
+          <p className="mt-6 text-sm text-slate-600">
+            Already registered?{" "}
+            <Link to="/login" className="font-semibold text-emerald-700">
+              Login
+            </Link>
+          </p>
         </div>
+      </div>
+
+      <div className="hidden md:block">
+        <div
+          className="h-full w-full bg-cover bg-center"
+          style={{
+            backgroundImage: `linear-gradient(rgba(2,6,23,0.4), rgba(2,6,23,0.4)), url(${bgImage})`,
+          }}
+        />
       </div>
     </div>
   );

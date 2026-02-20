@@ -1,299 +1,176 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { authAPI } from "../services/api";
 import bgImage from "../assets/login.png";
 
 function Login() {
   const navigate = useNavigate();
+  const { login, verifyOtpLogin } = useAuth();
 
-  const [mode, setMode] = useState("login"); // login | register | otp | loginOtp
-
+  const [mode, setMode] = useState("password");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
-  // 🔐 PASSWORD VALIDATION
-  const isValidPassword = (pwd) => {
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/.test(pwd);
-  };
+  useEffect(() => {
+    const raw = localStorage.getItem("pendingRegistration");
+    if (!raw) return;
 
-  // ========================= LOGIN =========================
-  const handleLogin = (e) => {
+    try {
+      const pending = JSON.parse(raw);
+      if (pending?.email) {
+        setEmail(pending.email);
+      }
+      if (pending?.password) {
+        setPassword(pending.password);
+      }
+      setInfo("Registered successfully. Please login to continue.");
+    } catch {
+      localStorage.removeItem("pendingRegistration");
+    }
+  }, []);
+
+  const inputClass =
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+
+  const handlePasswordLogin = async (e) => {
     e.preventDefault();
-
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!storedUser) {
-      setError("User not registered. Please register first.");
-      return;
-    }
-
-    if (email === storedUser.email && password === storedUser.password) {
-      localStorage.setItem("token", "dummy-token");
-      navigate("/dashboard");
-    } else {
-      setError("Invalid credentials");
-    }
-  };
-
-  // ====================== LOGIN WITH OTP ====================
-  const handleLoginOtpSend = () => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!storedUser) {
-      setError("User not registered. Please register first.");
-      return;
-    }
-
-    if (email !== storedUser.email) {
-      setError("Email not found");
-      return;
-    }
-
-    const loginOtp = Math.floor(1000 + Math.random() * 9000);
-    localStorage.setItem("loginOtp", loginOtp);
-
-    alert("Your Login OTP is: " + loginOtp);
-
-    setMode("loginOtp");
     setError("");
-  };
-
-  const handleVerifyLoginOtp = (e) => {
-    e.preventDefault();
-
-    const savedOtp = localStorage.getItem("loginOtp");
-
-    if (otp === savedOtp) {
-      localStorage.setItem("token", "dummy-token");
-      navigate("/dashboard");
-    } else {
-      setError("Invalid OTP");
+    setLoading(true);
+    try {
+      await login(email, password);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ======================= REGISTER =========================
-  const handleRegister = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
-
-    if (!email || !phone || !password) {
-      setError("All fields required");
-      return;
-    }
-
-    if (!/^[0-9]{10}$/.test(phone)) {
-      setError("Phone must be 10 digits");
-      return;
-    }
-
-    if (!isValidPassword(password)) {
-      setError(
-        "Password must contain capital, small, symbol and be 6+ characters"
-      );
-      return;
-    }
-
-    const existingUser = JSON.parse(localStorage.getItem("user"));
-    if (existingUser && existingUser.email === email) {
-      setError("User already exists. Please login.");
-      return;
-    }
-
-    // generate OTP
-    const registerOtp = Math.floor(1000 + Math.random() * 9000);
-
-    localStorage.setItem(
-      "tempUser",
-      JSON.stringify({ email, phone, password })
-    );
-    localStorage.setItem("registerOtp", registerOtp);
-
-    alert("Registration OTP: " + registerOtp);
-
-    setMode("otp");
     setError("");
+    setLoading(true);
+    try {
+      await authAPI.sendOtp({ email });
+      setOtpSent(true);
+      setInfo("OTP sent to your email.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ===================== VERIFY REGISTER OTP =================
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
-
-    const savedOtp = localStorage.getItem("registerOtp");
-    const tempUser = JSON.parse(localStorage.getItem("tempUser"));
-
-    if (otp === savedOtp) {
-      localStorage.setItem("user", JSON.stringify(tempUser));
-      localStorage.removeItem("tempUser");
-      localStorage.removeItem("registerOtp");
-
-      alert("Registration successful 🎉");
-
-      setMode("login");
-      setError("");
-    } else {
-      setError("Invalid OTP");
+    setError("");
+    setLoading(true);
+    try {
+      await verifyOtpLogin(email, otp);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="main-bg">
-      <div className="login-wrapper">
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md glass-card rounded-2xl p-6 md:p-8">
+          <h1 className="mb-2 text-2xl font-bold text-slate-900">HRMS Login</h1>
+          <p className="mb-6 text-sm text-slate-500">Sign in to continue</p>
 
-        {/* LEFT SIDE */}
-        <div className="login-left">
-          <h1 className="logo">HRMS</h1>
-
-          {/* LOGIN FORM */}
-          {mode === "login" && (
-            <div className="login-card">
-              <h2>Welcome Back 👋</h2>
-
-              <form onSubmit={handleLogin}>
-                <div className="input-group">
-                  <input
-                    type="email"
-                    placeholder="Enter Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="input-group">
-                  <input
-                    type="password"
-                    placeholder="Enter Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-
-                {error && <p className="error">{error}</p>}
-
-                <button className="login-btn">Sign In</button>
-              </form>
-
-              <p style={{ marginTop: "10px" }}>
-                or{" "}
-                <span
-                  style={{ color: "blue", cursor: "pointer" }}
-                  onClick={handleLoginOtpSend}
-                >
-                  Login with OTP
-                </span>
-              </p>
-
-              <p className="register-link">
-                Don’t have an account?{" "}
-                <span onClick={() => { setMode("register"); setError(""); }}>
-                  Register
-                </span>
-              </p>
-            </div>
+          {mode === "password" ? (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <input
+                className={inputClass}
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                className={inputClass}
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {info && <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{info}</p>}
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+              <button className="w-full rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+              <input
+                className={inputClass}
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={otpSent}
+                required
+              />
+              {otpSent && (
+                <input
+                  className={inputClass}
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  maxLength={6}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                  required
+                />
+              )}
+              {info && <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{info}</p>}
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+              <button className="w-full rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700" disabled={loading}>
+                {loading ? (otpSent ? "Verifying..." : "Sending OTP...") : otpSent ? "Verify OTP" : "Login with OTP"}
+              </button>
+            </form>
           )}
 
-          {/* LOGIN OTP VERIFY */}
-          {mode === "loginOtp" && (
-            <div className="login-card">
-              <h2>Verify Login OTP</h2>
+          <button
+            className="mt-4 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+            onClick={() => {
+              setMode((prev) => (prev === "password" ? "otp" : "password"));
+              setOtp("");
+              setOtpSent(false);
+              setError("");
+            }}
+          >
+            {mode === "password" ? "Login with OTP" : "Back to Password Login"}
+          </button>
 
-              <form onSubmit={handleVerifyLoginOtp}>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) =>
-                      setOtp(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                  />
-                </div>
-
-                {error && <p className="error">{error}</p>}
-
-                <button className="login-btn">Verify & Login</button>
-              </form>
-            </div>
-          )}
-
-          {/* REGISTER FORM */}
-          {mode === "register" && (
-            <div className="login-card">
-              <h2>Create Account</h2>
-
-              <form onSubmit={handleRegister}>
-                <div className="input-group">
-                  <input
-                    type="email"
-                    placeholder="Enter Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="input-group">
-                  <input
-                    type="text"
-                    placeholder="Enter Phone Number"
-                    value={phone}
-                    onChange={(e) =>
-                      setPhone(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                  />
-                </div>
-
-                <div className="input-group">
-                  <input
-                    type="password"
-                    placeholder="Create Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-
-                {error && <p className="error">{error}</p>}
-
-                <button className="login-btn">Send OTP</button>
-              </form>
-
-              <p className="register-link">
-                Already have an account?{" "}
-                <span onClick={() => setMode("login")}>Login</span>
-              </p>
-            </div>
-          )}
-
-          {/* REGISTER OTP VERIFY */}
-          {mode === "otp" && (
-            <div className="login-card">
-              <h2>Verify OTP</h2>
-
-              <form onSubmit={handleVerifyOtp}>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) =>
-                      setOtp(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                  />
-                </div>
-
-                {error && <p className="error">{error}</p>}
-
-                <button className="login-btn">Verify & Register</button>
-              </form>
-            </div>
-          )}
+          <p className="mt-6 text-sm text-slate-600">
+            Not registered? <Link to="/register" className="font-semibold text-emerald-700">Register here</Link>
+          </p>
         </div>
+      </div>
 
-        {/* RIGHT SIDE IMAGE */}
+      <div className="hidden md:block">
         <div
-          className="login-right"
-          style={{ backgroundImage: `url(${bgImage})` }}
-        ></div>
+          className="h-full w-full bg-cover bg-center"
+          style={{ backgroundImage: `linear-gradient(rgba(2,6,23,0.4), rgba(2,6,23,0.4)), url(${bgImage})` }}
+        />
       </div>
     </div>
   );
