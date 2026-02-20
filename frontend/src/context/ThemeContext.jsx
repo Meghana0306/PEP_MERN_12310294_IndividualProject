@@ -7,6 +7,7 @@ const getInitialTheme = () => "light";
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(getInitialTheme);
+  const safeSetTheme = (value) => setTheme(value === "dark" ? "dark" : "light");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -21,8 +22,8 @@ export const ThemeProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       theme,
-      setTheme,
-      toggleTheme: () => setTheme((prev) => (prev === "dark" ? "light" : "dark")),
+      setTheme: safeSetTheme,
+      toggleTheme: () => safeSetTheme(theme === "dark" ? "light" : "dark"),
     }),
     [theme]
   );
