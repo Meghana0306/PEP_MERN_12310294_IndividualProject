@@ -343,6 +343,8 @@ npm run build
 # Deploy the dist folder
 ```
 
+For Netlify, set `VITE_API_BASE_URL` to your deployed backend URL in Site Environment Variables.
+
 ## 📚 API Documentation
 
 Full API documentation available at `/api/docs`
