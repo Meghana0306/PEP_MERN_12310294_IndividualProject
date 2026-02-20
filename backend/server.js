@@ -14,6 +14,7 @@ const payrollRoutes = require("./routes/payrollRoutes");
 const app = express();
 
 // Middlewares
+app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 
